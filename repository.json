@@ -8,6 +8,14 @@
     "owner": "lstb1t",
     "versions": [
       {
+        "changelog": "Fixes Jellyfin 12 startup hang by removing a startup-time dependency loop from the Gelato item repository decorator.",
+        "checksum": "64abdc2df838dcaa0510fc6a131d7288",
+        "sourceUrl": "https://github.com/LoganMoffit/Gelato/releases/download/v0.26.16.2/gelato_0.26.16.2.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-10T15:26:53Z",
+        "version": "0.26.16.2"
+      },
+      {
         "changelog": "Jellyfin 12 compatibility build. Retargets Gelato to net10.0, updates Jellyfin package references to 12.0.0, updates the plugin ABI to 12.0.0.0, and adapts Jellyfin 12 API signature changes.",
         "checksum": "bf4cde03df034fcb9487b3fc4c13d6c9",
         "sourceUrl": "https://github.com/LoganMoffit/Gelato/releases/download/v0.26.16.1/gelato_0.26.16.1.zip",
