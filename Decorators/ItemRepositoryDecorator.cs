@@ -5,14 +5,20 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Querying;
 using Microsoft.AspNetCore.Http;
 
 namespace Gelato.Decorators;
 
-public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAccessor http)
+public sealed class GelatoItemRepository(
+    IItemRepository inner,
+    IHttpContextAccessor http,
+    ILibraryManager libraryManager
+)
     : IItemRepository
 {
     private static readonly BaseItemKind[] ListScopeMediaKinds =
@@ -33,12 +39,31 @@ public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAcce
     private readonly IHttpContextAccessor _http =
         http ?? throw new ArgumentNullException(nameof(http));
 
-    public void DeleteItem(params IReadOnlyList<Guid> ids) => inner.DeleteItem(ids);
+    public void DeleteItem(params IReadOnlyList<Guid> ids)
+    {
+        var items = ids
+            .Select(libraryManager.GetItemById)
+            .Where(x => x is not null)
+            .ToArray();
 
-    public void SaveItems(IReadOnlyList<BaseItem> items, CancellationToken cancellationToken) =>
-        inner.SaveItems(items, cancellationToken);
+        libraryManager.DeleteItemsUnsafeFast(items!, deleteSourceFiles: true);
+    }
 
-    public void SaveImages(BaseItem item) => inner.SaveImages(item);
+    public void SaveItems(IReadOnlyList<BaseItem> items, CancellationToken cancellationToken)
+    {
+        foreach (var group in items.GroupBy(x => x.GetParent()).Where(x => x.Key is not null))
+        {
+            libraryManager.UpdateItemsAsync(
+                group.ToArray(),
+                group.Key!,
+                ItemUpdateType.MetadataEdit,
+                cancellationToken
+            ).GetAwaiter().GetResult();
+        }
+    }
+
+    public void SaveImages(BaseItem item) =>
+        libraryManager.UpdateImagesAsync(item, forceUpdate: true).GetAwaiter().GetResult();
 
     public BaseItem RetrieveItem(Guid id) => inner.RetrieveItem(id);
 
@@ -129,13 +154,15 @@ public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAcce
     public IReadOnlyList<string> GetNextUpSeriesKeys(
         InternalItemsQuery filter,
         DateTime dateCutoff
-    ) => inner.GetNextUpSeriesKeys(filter, dateCutoff);
+    ) => libraryManager.GetNextUpSeriesKeys(filter, [], dateCutoff);
 
-    public void UpdateInheritedValues() => inner.UpdateInheritedValues();
+    public void UpdateInheritedValues()
+    {
+    }
 
-    public int GetCount(InternalItemsQuery filter) => inner.GetCount(filter);
+    public int GetCount(InternalItemsQuery filter) => libraryManager.GetCount(filter);
 
-    public ItemCounts GetItemCounts(InternalItemsQuery filter) => inner.GetItemCounts(filter);
+    public ItemCounts GetItemCounts(InternalItemsQuery filter) => libraryManager.GetItemCounts(filter);
 
     public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetGenres(
         InternalItemsQuery filter
@@ -167,7 +194,15 @@ public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAcce
 
     public IReadOnlyList<string> GetGenreNames() => inner.GetGenreNames();
 
+    public IReadOnlyList<string> GetMediaStreamLanguages(
+        InternalItemsQuery filter,
+        MediaStreamType mediaStreamType
+    ) => inner.GetMediaStreamLanguages(ApplyFilters(filter), mediaStreamType);
+
     public IReadOnlyList<string> GetAllArtistNames() => inner.GetAllArtistNames();
+
+    public QueryFiltersLegacy GetQueryFiltersLegacy(InternalItemsQuery filter) =>
+        inner.GetQueryFiltersLegacy(ApplyFilters(filter));
 
     public Task<bool> ItemExistsAsync(Guid id) => inner.ItemExistsAsync(id);
 
@@ -176,8 +211,8 @@ public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAcce
 
     public IReadOnlyDictionary<string, MusicArtist[]> FindArtists(
         IReadOnlyList<string> artistNames
-    ) => inner.FindArtists(artistNames);
+    ) => libraryManager.GetArtists(artistNames);
 
     public Task ReattachUserDataAsync(BaseItem item, CancellationToken cancellationToken) =>
-        inner.ReattachUserDataAsync(item, cancellationToken);
+        libraryManager.ReattachUserDataAsync(item, cancellationToken);
 }

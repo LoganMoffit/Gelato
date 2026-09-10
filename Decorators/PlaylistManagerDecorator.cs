@@ -39,6 +39,7 @@ public sealed class PlaylistManagerDecorator(
     public async Task AddItemToPlaylistAsync(
         Guid playlistId,
         IReadOnlyCollection<Guid> itemIds,
+        int? position,
         Guid userId
     )
     {
@@ -79,7 +80,9 @@ public sealed class PlaylistManagerDecorator(
             )
             .ToArray();
 
-        playlist.LinkedChildren = [.. playlist.LinkedChildren, .. newChildren];
+        playlist.LinkedChildren = position is >= 0 && position < playlist.LinkedChildren.Length
+            ? [.. playlist.LinkedChildren[..position.Value], .. newChildren, .. playlist.LinkedChildren[position.Value..]]
+            : [.. playlist.LinkedChildren, .. newChildren];
         playlist.DateLastMediaAdded = DateTime.UtcNow;
 
         await playlist
@@ -95,6 +98,12 @@ public sealed class PlaylistManagerDecorator(
             RefreshPriority.High
         );
     }
+
+    public Task AddItemToPlaylistAsync(
+        Guid playlistId,
+        IReadOnlyCollection<Guid> itemIds,
+        Guid userId
+    ) => AddItemToPlaylistAsync(playlistId, itemIds, null, userId);
 
     public Task RemoveItemFromPlaylistAsync(string playlistId, IEnumerable<string> entryIds) =>
         inner.RemoveItemFromPlaylistAsync(playlistId, entryIds);

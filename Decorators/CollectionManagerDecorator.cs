@@ -73,7 +73,7 @@ public sealed class CollectionManagerDecorator(
                 ? new LinkedChild
                 {
                     LibraryItemId = item.Id.ToString("N", CultureInfo.InvariantCulture),
-                    Type = LinkedChildType.Manual,
+                    Type = MediaBrowser.Controller.Entities.LinkedChildType.Manual,
                 }
                 : LinkedChild.Create(item);
 
@@ -108,6 +108,9 @@ public sealed class CollectionManagerDecorator(
         IEnumerable<BaseItem> items,
         User user
     ) => inner.CollapseItemsWithinBoxSets(items, user);
+
+    public IEnumerable<BoxSet> GetCollectionsContainingItem(User user, Guid itemId) =>
+        inner.GetCollectionsContainingItem(user, itemId);
 
     public Task<Folder?> GetCollectionsFolder(bool createIfNeeded) =>
         inner.GetCollectionsFolder(createIfNeeded);
