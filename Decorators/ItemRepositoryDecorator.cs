@@ -14,11 +14,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Gelato.Decorators;
 
-public sealed class GelatoItemRepository(
-    IItemRepository inner,
-    IHttpContextAccessor http,
-    ILibraryManager libraryManager
-)
+public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAccessor http)
     : IItemRepository
 {
     private static readonly BaseItemKind[] ListScopeMediaKinds =
@@ -39,31 +35,21 @@ public sealed class GelatoItemRepository(
     private readonly IHttpContextAccessor _http =
         http ?? throw new ArgumentNullException(nameof(http));
 
-    public void DeleteItem(params IReadOnlyList<Guid> ids)
-    {
-        var items = ids
-            .Select(libraryManager.GetItemById)
-            .Where(x => x is not null)
-            .ToArray();
-
-        libraryManager.DeleteItemsUnsafeFast(items!, deleteSourceFiles: true);
-    }
+    public void DeleteItem(params IReadOnlyList<Guid> ids) =>
+        throw new NotSupportedException("DeleteItem moved off IItemRepository in Jellyfin 12.");
 
     public void SaveItems(IReadOnlyList<BaseItem> items, CancellationToken cancellationToken)
     {
-        foreach (var group in items.GroupBy(x => x.GetParent()).Where(x => x.Key is not null))
+        foreach (var item in items)
         {
-            libraryManager.UpdateItemsAsync(
-                group.ToArray(),
-                group.Key!,
-                ItemUpdateType.MetadataEdit,
-                cancellationToken
-            ).GetAwaiter().GetResult();
+            item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken)
+                .GetAwaiter()
+                .GetResult();
         }
     }
 
     public void SaveImages(BaseItem item) =>
-        libraryManager.UpdateImagesAsync(item, forceUpdate: true).GetAwaiter().GetResult();
+        throw new NotSupportedException("SaveImages moved off IItemRepository in Jellyfin 12.");
 
     public BaseItem RetrieveItem(Guid id) => inner.RetrieveItem(id);
 
@@ -154,15 +140,17 @@ public sealed class GelatoItemRepository(
     public IReadOnlyList<string> GetNextUpSeriesKeys(
         InternalItemsQuery filter,
         DateTime dateCutoff
-    ) => libraryManager.GetNextUpSeriesKeys(filter, [], dateCutoff);
+    ) => throw new NotSupportedException("GetNextUpSeriesKeys moved off IItemRepository in Jellyfin 12.");
 
     public void UpdateInheritedValues()
     {
     }
 
-    public int GetCount(InternalItemsQuery filter) => libraryManager.GetCount(filter);
+    public int GetCount(InternalItemsQuery filter) =>
+        throw new NotSupportedException("GetCount moved off IItemRepository in Jellyfin 12.");
 
-    public ItemCounts GetItemCounts(InternalItemsQuery filter) => libraryManager.GetItemCounts(filter);
+    public ItemCounts GetItemCounts(InternalItemsQuery filter) =>
+        throw new NotSupportedException("GetItemCounts moved off IItemRepository in Jellyfin 12.");
 
     public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetGenres(
         InternalItemsQuery filter
@@ -211,8 +199,8 @@ public sealed class GelatoItemRepository(
 
     public IReadOnlyDictionary<string, MusicArtist[]> FindArtists(
         IReadOnlyList<string> artistNames
-    ) => libraryManager.GetArtists(artistNames);
+    ) => throw new NotSupportedException("FindArtists moved off IItemRepository in Jellyfin 12.");
 
     public Task ReattachUserDataAsync(BaseItem item, CancellationToken cancellationToken) =>
-        libraryManager.ReattachUserDataAsync(item, cancellationToken);
+        throw new NotSupportedException("ReattachUserDataAsync moved off IItemRepository in Jellyfin 12.");
 }
