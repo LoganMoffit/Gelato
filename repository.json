@@ -8,6 +8,14 @@
     "owner": "lstb1t",
     "versions": [
       {
+        "changelog": "Add tv/channel catalog imports for live stream catalogs.",
+        "checksum": "725c524900061a96f8907742103783fa",
+        "sourceUrl": "https://github.com/LoganMoffit/Gelato/releases/download/v0.26.16.3/gelato_0.26.16.3.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-13T18:07:12Z",
+        "version": "0.26.16.3"
+      },
+      {
         "changelog": "Fixes Jellyfin 12 startup hang by removing a startup-time dependency loop from the Gelato item repository decorator.",
         "checksum": "64abdc2df838dcaa0510fc6a131d7288",
         "sourceUrl": "https://github.com/LoganMoffit/Gelato/releases/download/v0.26.16.2/gelato_0.26.16.2.zip",
