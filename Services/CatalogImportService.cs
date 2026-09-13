@@ -43,6 +43,7 @@ public class CatalogImportService(
         var stremio = cfg.Stremio;
         var seriesFolder = cfg.SeriesFolder;
         var movieFolder = cfg.MovieFolder;
+        var tvFolder = cfg.TvFolder;
 
         if (seriesFolder is null)
         {
@@ -52,6 +53,11 @@ public class CatalogImportService(
         if (movieFolder is null)
         {
             logger.LogWarning("No movie root folder found");
+        }
+
+        if (tvFolder is null)
+        {
+            logger.LogWarning("No TV root folder found");
         }
 
         var maxItems = catalogCfg.MaxItems;
@@ -103,6 +109,14 @@ public class CatalogImportService(
                                 return;
                             }
 
+                            if (meta.Type == StremioMediaType.Unknown)
+                            {
+                                if (Enum.TryParse<StremioMediaType>(type, true, out var parsedType))
+                                {
+                                    meta.Type = parsedType;
+                                }
+                            }
+
                             var mediaType = meta.Type;
                             var baseItemKind = mediaType.ToBaseItem();
 
@@ -110,6 +124,9 @@ public class CatalogImportService(
                             var root = baseItemKind switch
                             {
                                 BaseItemKind.Series => seriesFolder,
+                                BaseItemKind.Movie
+                                    when mediaType is StremioMediaType.Tv
+                                        or StremioMediaType.Channel => tvFolder,
                                 BaseItemKind.Movie => movieFolder,
                                 _ => null,
                             };

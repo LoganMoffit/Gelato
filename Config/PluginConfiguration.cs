@@ -10,6 +10,7 @@ public class PluginConfiguration : BasePluginConfiguration
 {
     public string MoviePath { get; set; } = Path.Combine(Path.GetTempPath(), "gelato", "movies");
     public string SeriesPath { get; set; } = Path.Combine(Path.GetTempPath(), "gelato", "series");
+    public string TvPath { get; set; } = Path.Combine(Path.GetTempPath(), "gelato", "tv");
     public int StreamTTL { get; set; } = 3600;
     public int CatalogMaxItems { get; set; } = 100;
     public string Url { get; set; } = "";
@@ -56,6 +57,10 @@ public class PluginConfiguration : BasePluginConfiguration
     [XmlIgnore]
     public Folder? SeriesFolder;
 
+    [JsonIgnore]
+    [XmlIgnore]
+    public Folder? TvFolder;
+
     public PluginConfiguration GetEffectiveConfig(Guid userId)
     {
         var userConfig = UserConfigs.FirstOrDefault(u => u.UserId == userId);
@@ -69,6 +74,7 @@ public class UserConfig
     public string Url { get; set; } = "";
     public string MoviePath { get; set; } = "";
     public string SeriesPath { get; set; } = "";
+    public string TvPath { get; set; } = "";
     public bool DisableSearch { get; set; } = false;
 
     /// <summary>
@@ -82,6 +88,7 @@ public class UserConfig
             Url = Url,
             MoviePath = MoviePath,
             SeriesPath = SeriesPath,
+            TvPath = TvPath,
             DisableSearch = DisableSearch,
 
             // All other fields from base config

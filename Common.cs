@@ -36,7 +36,12 @@ public sealed class StremioUri
         var kind = item.GetBaseItemKind();
         var mediaType = kind switch
         {
-            BaseItemKind.Movie => StremioMediaType.Movie,
+            BaseItemKind.Movie => item.GelatoData<string>("stremioMediaType") switch
+            {
+                var type when Enum.TryParse<StremioMediaType>(type, true, out var parsed) =>
+                    parsed,
+                _ => StremioMediaType.Movie,
+            },
             BaseItemKind.Series or BaseItemKind.Episode => StremioMediaType.Series,
             _ => throw new NotSupportedException($"Unsupported BaseItemKind: {kind}"),
         };
@@ -53,7 +58,7 @@ public sealed class StremioUri
                     var imdb = item.GetProviderId(MetadataProvider.Imdb);
                     return string.IsNullOrWhiteSpace(imdb)
                         ? uri
-                        : new StremioUri(StremioMediaType.Movie, imdb);
+                        : new StremioUri(mediaType, imdb);
                 }
             case BaseItemKind.Series:
                 {
@@ -83,7 +88,7 @@ public sealed class StremioUri
 
     public override string ToString()
     {
-        var type = MediaType == StremioMediaType.Movie ? "movie" : "series";
+        var type = MediaType.ToString().ToLowerInvariant();
         return _streamId is null
             ? $"stremio://{type}/{ExternalId}"
             : $"stremio://{type}/{ExternalId}/{_streamId}";
@@ -216,6 +221,7 @@ public static class EnumMappingExtensions
         return type switch
         {
             StremioMediaType.Movie => BaseItemKind.Movie,
+            StremioMediaType.Tv or StremioMediaType.Channel => BaseItemKind.Movie,
             StremioMediaType.Series => BaseItemKind.Series,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(type),

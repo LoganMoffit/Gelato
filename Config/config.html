@@ -55,6 +55,12 @@
               <input is="emby-input" type="text" id="txtSeriesPath" class="emby-input" />
               <div class="fieldDescription">Filesystem path for series items. Use this path as library folder.</div>
             </div>
+
+            <div class="inputContainer">
+              <label class="inputLabel inputLabelUnfocused" for="txtTvPath">TV path:</label>
+              <input is="emby-input" type="text" id="txtTvPath" class="emby-input" />
+              <div class="fieldDescription">Filesystem path for live TV items. Use this path as library folder.</div>
+            </div>
             
 
 
@@ -220,6 +226,11 @@
                 <input is="emby-input" type="text" id="txtUserSeriesPath" class="emby-input" />
               </div>
 
+              <div class="inputContainer">
+                <label class="inputLabel" for="txtUserTvPath">TV path:</label>
+                <input is="emby-input" type="text" id="txtUserTvPath" class="emby-input" />
+              </div>
+
               <div class="checkboxContainer">
                 <label>
                   <input is="emby-checkbox" type="checkbox" id="chkUserDisableSearch" />
@@ -289,6 +300,7 @@
         const txtUrl = page.querySelector('#txtUrl');
         const txtMoviePath = page.querySelector('#txtMoviePath');
         const txtSeriesPath = page.querySelector('#txtSeriesPath');
+        const txtTvPath = page.querySelector('#txtTvPath');
 
         const txtStreamTTL = page.querySelector('#txtStreamTTL');
         const chkEnableMixed = page.querySelector('#chkEnableMixed');
@@ -314,6 +326,7 @@
         const txtUserUrl = page.querySelector('#txtUserUrl');
         const txtUserMoviePath = page.querySelector('#txtUserMoviePath');
         const txtUserSeriesPath = page.querySelector('#txtUserSeriesPath');
+        const txtUserTvPath = page.querySelector('#txtUserTvPath');
         const chkUserDisableSearch = page.querySelector('#chkUserDisableSearch');
 
         let currentConfig = null;
@@ -327,6 +340,7 @@
                 Url: uc.Url,
                 MoviePath: uc.MoviePath,
                 SeriesPath: uc.SeriesPath,
+                TvPath: uc.TvPath,
                 DisableSearch: uc.DisableSearch,
               };
             }
@@ -584,6 +598,7 @@
             if (txtUrl) txtUrl.value = cfg.Url || "";
             if (txtMoviePath) txtMoviePath.value = cfg.MoviePath || "";
             if (txtSeriesPath) txtSeriesPath.value = cfg.SeriesPath || "";
+            if (txtTvPath) txtTvPath.value = cfg.TvPath || "";
             if (txtStreamTTL) txtStreamTTL.value = cfg.StreamTTL || 3600;
             if (chkEnableMixed) chkEnableMixed.checked = cfg.EnableMixed ?? true;
             if (chkExtendLocalSeriesTrees) chkExtendLocalSeriesTrees.checked = cfg.ExtendLocalSeriesTrees ?? false;
@@ -614,6 +629,7 @@
             cfg.Url = txtUrl.value.trim();
             cfg.MoviePath = txtMoviePath.value.trim();
             cfg.SeriesPath = txtSeriesPath.value.trim();
+            cfg.TvPath = txtTvPath.value.trim();
 
             
             // Stream TTL
@@ -648,6 +664,7 @@
               Url: override.Url,
               MoviePath: override.MoviePath,
               SeriesPath: override.SeriesPath,
+              TvPath: override.TvPath,
               DisableSearch: override.DisableSearch
             }));
 
@@ -748,12 +765,14 @@
             txtUserUrl.value = override.Url || '';
             txtUserMoviePath.value = override.MoviePath || '';
             txtUserSeriesPath.value = override.SeriesPath || '';
+            txtUserTvPath.value = override.TvPath || '';
             chkUserDisableSearch.checked = override.DisableSearch || false;
           } else {
             // New
             txtUserUrl.value = currentConfig?.Url || '';
             txtUserMoviePath.value = currentConfig?.MoviePath || '';
             txtUserSeriesPath.value = currentConfig?.SeriesPath || '';
+            txtUserTvPath.value = currentConfig?.TvPath || '';
             chkUserDisableSearch.checked = false;
           }
         }
@@ -772,6 +791,7 @@
             Url: txtUserUrl.value.trim(),
             MoviePath: txtUserMoviePath.value.trim(),
             SeriesPath: txtUserSeriesPath.value.trim(),
+            TvPath: txtUserTvPath.value.trim(),
             DisableSearch: chkUserDisableSearch.checked
           };
 

@@ -33,6 +33,7 @@ public sealed class GelatoManager(
 {
     public const string StreamTag = "gelato-stream";
     public const string TreeSyncedTag = "gelato-tree-synced";
+    public const string StremioMediaTypeKey = "stremioMediaType";
 
     private readonly ILogger<GelatoManager> _log = loggerFactory.CreateLogger<GelatoManager>();
 
@@ -118,6 +119,13 @@ public sealed class GelatoManager(
         );
     }
 
+    public Folder? TryGetTvFolder(Guid userId)
+    {
+        return TryGetFolder(
+            GelatoPlugin.Instance!.Configuration.GetEffectiveConfig(userId).TvPath
+        );
+    }
+
     public Folder? TryGetMovieFolder(PluginConfiguration cfg)
     {
         return TryGetFolder(cfg.MoviePath);
@@ -126,6 +134,23 @@ public sealed class GelatoManager(
     public Folder? TryGetSeriesFolder(PluginConfiguration cfg)
     {
         return TryGetFolder(cfg.SeriesPath);
+    }
+
+    public Folder? TryGetTvFolder(PluginConfiguration cfg)
+    {
+        return TryGetFolder(cfg.TvPath);
+    }
+
+    private static bool IsVideoCatalogType(StremioMediaType mediaType)
+    {
+        return mediaType is StremioMediaType.Movie or StremioMediaType.Tv or StremioMediaType.Channel;
+    }
+
+    private Folder? GetVideoRoot(PluginConfiguration cfg, StremioMediaType mediaType)
+    {
+        return mediaType is StremioMediaType.Tv or StremioMediaType.Channel
+            ? TryGetTvFolder(cfg)
+            : TryGetMovieFolder(cfg);
     }
 
     private Folder? TryGetFolder(string path)
@@ -191,7 +216,7 @@ public sealed class GelatoManager(
         var mediaType = meta.Type;
         BaseItem? existing;
 
-        if (mediaType is not (StremioMediaType.Movie or StremioMediaType.Series))
+        if (!IsVideoCatalogType(mediaType) && mediaType is not StremioMediaType.Series)
         {
             _log.LogWarning("type {Type} is not valid, skipping", mediaType);
             return (null, false);
@@ -252,7 +277,7 @@ public sealed class GelatoManager(
             return (null, false);
         }
 
-        if (mediaType is not (StremioMediaType.Movie or StremioMediaType.Series))
+        if (!IsVideoCatalogType(mediaType) && mediaType is not StremioMediaType.Series)
         {
             _log.LogWarning("type {Type} is not valid after refresh, skipping", mediaType);
             return (null, false);
@@ -279,9 +304,9 @@ public sealed class GelatoManager(
             return (null, false);
         }
 
-        if (mediaType == StremioMediaType.Movie)
+        if (IsVideoCatalogType(mediaType))
         {
-            baseItem = SaveItem(baseItem, parent);
+            baseItem = SaveItem(baseItem, GetVideoRoot(cfg, mediaType) ?? parent);
             if (baseItem is null)
             {
                 _log.LogWarning("InsertMeta: failed to create baseItem");
@@ -393,7 +418,15 @@ public sealed class GelatoManager(
         }
 
         var isEpisode = video is Episode;
-        var parent = isEpisode ? video.GetParent() as Folder : TryGetMovieFolder(userId);
+        var mediaTypeOverride = video.GelatoData<string>(StremioMediaTypeKey);
+        var isTvLike =
+            Enum.TryParse<StremioMediaType>(mediaTypeOverride, true, out var storedMediaType)
+            && storedMediaType is StremioMediaType.Tv or StremioMediaType.Channel;
+        var parent = isEpisode
+            ? video.GetParent() as Folder
+            : isTvLike
+                ? TryGetTvFolder(userId)
+                : TryGetMovieFolder(userId);
         if (parent is null)
         {
             _log.LogWarning("SyncStreams: no parent, skipping");
@@ -1458,6 +1491,7 @@ public sealed class GelatoManager(
 
         var stremioUri = new StremioUri(meta.Type, externalId);
         item.SetProviderId("Stremio", stremioUri.ExternalId);
+        item.SetGelatoData(StremioMediaTypeKey, meta.Type.ToString());
 
         item.Overview = meta.Description ?? meta.Overview;
 
